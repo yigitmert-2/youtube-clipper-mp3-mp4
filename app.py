@@ -55,6 +55,12 @@ def is_valid_url(url: str) -> bool:
     return bool(VALID_DOMAIN_RE.match(url))
 
 
+def strip_ansi(text: str) -> str:
+    """Remove ANSI escape sequences from a string."""
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    return ansi_escape.sub('', text)
+
+
 def cleanup_old_temp(max_age_hours: int = 24) -> None:
     """Delete temp session dirs older than *max_age_hours*."""
     if not TEMP_DIR.exists():
@@ -125,7 +131,7 @@ def _download_media(session_id: str, url: str, mode: str) -> None:
             }
         )
     except Exception as exc:
-        err_msg = re.sub(r'\x1b\[[0-9;]*m', '', str(exc))
+        err_msg = strip_ansi(str(exc))
         downloads[session_id].update(
             {
                 "status": "error",
@@ -167,7 +173,7 @@ def api_metadata():
                 "duration": info.get("duration", 0)
             })
     except Exception as exc:
-        return jsonify({"error": str(exc)}), 500
+        return jsonify({"error": strip_ansi(str(exc))}), 500
 
 
 @app.route("/api/download", methods=["POST"])
@@ -257,6 +263,26 @@ def api_audio(session_id: str):
 
     mimetype = "video/mp4" if filepath.suffix == ".mp4" else "audio/mpeg"
     return send_file(filepath, mimetype=mimetype)
+
+
+@app.route("/api/download_full/<session_id>")
+def api_download_full(session_id: str):
+    info = downloads.get(session_id)
+    if info is None or info["status"] != "ready":
+        return jsonify({"error": "Media not ready or session not found"}), 404
+
+    filepath = TEMP_DIR / session_id / info["filename"]
+    if not filepath.exists():
+        return jsonify({"error": "Media file not found on disk"}), 404
+
+    mimetype = "video/mp4" if filepath.suffix == ".mp4" else "audio/mpeg"
+    
+    # We construct a clean download name
+    ext = filepath.suffix
+    clean_title = re.sub(r'[^A-Za-z0-9_\- ]', '', info.get('title', 'media')).strip()
+    download_name = f"{clean_title}_full{ext}"
+
+    return send_file(filepath, mimetype=mimetype, as_attachment=True, download_name=download_name)
 
 
 @app.route("/api/clip", methods=["POST"])

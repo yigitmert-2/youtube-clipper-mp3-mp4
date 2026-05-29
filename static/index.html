@@ -52,7 +52,7 @@
       </div>
       
       <div class="step-badge">Step 1</div>
-      <h2 class="section-title">Paste a YouTube Link</h2>
+      <h2 class="section-title">Paste a Video Link</h2>
 
       <form id="url-form" class="url-form" autocomplete="off">
         <div class="input-group">
@@ -153,11 +153,17 @@
         </div>
       </div>
 
-      <!-- Download clips button -->
-      <button id="download-clips-btn" class="btn btn-primary btn-lg" disabled>
-        <span class="btn-icon">📦</span>
-        <span class="btn-label">Download Clips</span>
-      </button>
+      <!-- Download Actions -->
+      <div class="editor-actions">
+        <button id="download-full-btn" class="btn btn-secondary btn-lg">
+          <span class="btn-icon">⬇</span>
+          <span class="btn-label" id="download-full-label">Download Full Media</span>
+        </button>
+        <button id="download-clips-btn" class="btn btn-primary btn-lg" disabled>
+          <span class="btn-icon">📦</span>
+          <span class="btn-label">Download Clips</span>
+        </button>
+      </div>
     </section>
   </main>
 

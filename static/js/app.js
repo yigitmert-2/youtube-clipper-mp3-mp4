@@ -75,6 +75,8 @@
     clipList:         $('#clip-list'),
     clipEmpty:        $('#clip-empty-state'),
     clipCount:        $('#clip-count'),
+    downloadFullBtn:  $('#download-full-btn'),
+    downloadFullLabel:$('#download-full-label'),
     downloadClipsBtn: $('#download-clips-btn'),
 
     modal:            $('#download-modal'),
@@ -172,8 +174,8 @@
     const url = dom.urlInput.value.trim();
     if (!url) return;
 
-    if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
-      showInlineError('Please enter a valid YouTube URL.');
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      showInlineError('Please enter a valid URL starting with http:// or https://');
       return;
     }
 
@@ -391,6 +393,9 @@
     dom.urlSection.style.pointerEvents = 'none';
     dom.editorSection.classList.remove('hidden');
     dom.editorVideoTitle.textContent = state.videoTitle || '';
+    if (dom.downloadFullLabel) {
+      dom.downloadFullLabel.textContent = `Download Full ${state.currentMode === 'audio' ? 'Audio' : 'Video'}`;
+    }
 
     // Scroll into view
     dom.editorSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -683,6 +688,13 @@
     if (card) {
       card.classList.toggle('active', active);
     }
+  }
+
+  if (dom.downloadFullBtn) {
+    dom.downloadFullBtn.addEventListener('click', () => {
+      if (!state.sessionId) return;
+      window.location.href = `/api/download_full/${state.sessionId}`;
+    });
   }
 
   /* ── Download Modal ────────────────────────────────────────── */
