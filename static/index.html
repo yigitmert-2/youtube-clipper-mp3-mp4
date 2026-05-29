@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Clip and download segments from YouTube videos as MP3 files" />
+  <meta name="theme-color" content="#06060a" />
+  <title>YouTube MP3 Clipper</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="static/css/style.css" />
+</head>
+<body>
+  <!-- ═══════════════════════════════════════════════
+       BACKGROUND ORBS  (pure CSS, see style.css)
+       ═══════════════════════════════════════════════ -->
+  <div class="bg-orbs" aria-hidden="true"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       TOAST CONTAINER
+       ═══════════════════════════════════════════════ -->
+  <div id="toast-container"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       HEADER
+       ═══════════════════════════════════════════════ -->
+  <header class="app-header">
+    <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+      <div style="text-align: center;">
+        <h1 class="app-title">YouTube MP3 Clipper ✂️</h1>
+        <p class="app-tagline">Extract high-quality audio &amp; video clips with precision.</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <!-- ═════════════════════════════════════════════
+         STEP 1 — URL INPUT
+         ═════════════════════════════════════════════ -->
+    <section id="url-section" class="card url-card">
+      <div class="mode-tabs">
+        <button type="button" class="mode-tab active" data-mode="audio">🎵 Audio</button>
+        <button type="button" class="mode-tab" data-mode="video">🎬 Video</button>
+      </div>
+      
+      <div class="step-badge">Step 1</div>
+      <h2 class="section-title">Paste a YouTube Link</h2>
+
+      <form id="url-form" class="url-form" autocomplete="off">
+        <div class="input-group">
+          <input type="url" id="url-input" class="form-input url-input" placeholder="Paste YouTube URL here..." required autocomplete="off">
+          <button type="submit" id="download-btn" class="btn btn-primary">
+            <span class="btn-icon">⬇</span>
+            <span id="download-btn-label" class="btn-label">Download Audio</span>
+          </button>
+          <button type="button" id="cancel-btn" class="btn btn-danger-icon hidden" title="Cancel & Start Over" style="padding: 0 12px; font-size: 1.2rem;">✕</button>
+        </div>
+      </form>
+
+      <!-- Progress / Status area -->
+      <div id="progress-area" class="progress-area hidden">
+        <div class="progress-info">
+          <span id="status-text" class="status-text">Preparing download…</span>
+          <span id="progress-percent" class="progress-percent">0%</span>
+        </div>
+        <div class="progress-bar-track">
+          <div id="progress-bar" class="progress-bar-fill" style="width: 0%"></div>
+        </div>
+        <p id="video-title" class="video-title hidden"></p>
+      </div>
+
+      <!-- Error area -->
+      <div id="error-area" class="error-area hidden">
+        <span class="error-icon">⚠</span>
+        <span id="error-message" class="error-message"></span>
+      </div>
+    </section>
+
+    <!-- ═════════════════════════════════════════════
+         STEP 2 — WAVEFORM EDITOR
+         ═════════════════════════════════════════════ -->
+    <section id="editor-section" class="card editor-card hidden">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <div class="step-badge">Step 2</div>
+          <h2 class="section-title">Edit &amp; Clip</h2>
+        </div>
+        <button type="button" id="start-over-btn" class="btn btn-danger-icon" title="Start Over" style="padding: 6px 14px; font-size: 0.9rem; font-weight: 600;">
+          ✕ <span>Start Over</span>
+        </button>
+      </div>
+      <p id="editor-video-title" class="editor-video-title"></p>
+
+      <!-- Video Player (Hidden in Audio Mode) -->
+      <div id="video-wrapper" class="video-wrapper hidden">
+        <video id="media-player" class="media-player" controls controlsList="nodownload"></video>
+      </div>
+
+      <!-- Waveform -->
+      <div class="waveform-wrapper">
+        <div id="waveform"></div>
+      </div>
+
+      <!-- Transport controls -->
+      <div class="transport-bar">
+        <button id="play-pause-btn" class="btn btn-icon-only transport-btn" title="Play / Pause">
+          <span class="icon-play">▶</span>
+          <span class="icon-pause hidden">⏸</span>
+        </button>
+
+        <div class="time-display">
+          <span id="current-time">00:00.0</span>
+          <span class="time-sep">/</span>
+          <span id="total-time">00:00.0</span>
+        </div>
+
+        <div class="zoom-control">
+          <span class="zoom-label">🔍</span>
+          <input
+            type="range"
+            id="zoom-slider"
+            class="zoom-slider"
+            min="1"
+            max="500"
+            value="1"
+            step="1"
+          />
+        </div>
+
+        <button id="add-clip-btn" class="btn btn-primary btn-sm">
+          <span class="btn-icon">+</span> <span>Add Clip</span>
+        </button>
+      </div>
+
+      <!-- Clip list -->
+      <div class="clip-list-header">
+        <h3 class="clip-list-title">Your Clips</h3>
+        <span id="clip-count" class="clip-count">0 clips</span>
+      </div>
+
+      <div id="clip-list" class="clip-list">
+        <div id="clip-empty-state" class="clip-empty">
+          <span class="clip-empty-icon">✂</span>
+          Click 'Add Clip' or drag on the waveform to create a clip
+        </div>
+      </div>
+
+      <!-- Download clips button -->
+      <button id="download-clips-btn" class="btn btn-primary btn-lg" disabled>
+        <span class="btn-icon">📦</span>
+        <span class="btn-label">Download Clips</span>
+      </button>
+    </section>
+  </main>
+
+  <!-- ═══════════════════════════════════════════════
+       STEP 3 — DOWNLOAD MODAL
+       ═══════════════════════════════════════════════ -->
+  <div id="download-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 class="modal-title">Name Your Clips</h3>
+      <div id="modal-clip-list" class="modal-clip-list"></div>
+      
+      <label class="default-names-label">
+        <input type="checkbox" id="use-default-names" class="default-names-checkbox" />
+        <span class="checkbox-custom"></span>
+        <span>Use default names for the rest</span>
+      </label>
+
+      <div class="modal-actions">
+        <button id="modal-cancel-btn" class="btn btn-secondary">Cancel</button>
+        <button id="modal-download-all-btn" class="btn btn-primary">
+          <span class="btn-icon">⬇</span>
+          <span class="btn-label">Download All</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SCRIPTS
+       ═══════════════════════════════════════════════ -->
+
+  <!-- Large Video Modal -->
+  <div id="large-video-modal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 500px;">
+      <h3 class="modal-title">Large Video Detected</h3>
+      <p style="color: var(--text-sec); margin-bottom: 20px;">
+        This video is quite long (<span id="lv-duration"></span>). Do you want to load the visual editor (which takes time to prepare), or use Quick Clip if you already know your timestamps?
+      </p>
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button id="lv-editor-btn" class="btn btn-secondary" style="flex: 1;">Load Visual Editor</button>
+        <button id="lv-quick-btn" class="btn btn-primary" style="flex: 1;">Quick Clip</button>
+      </div>
+      
+      <div id="quick-clip-panel" class="hidden" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px;">
+        <h4 style="margin: 0 0 10px 0;">Enter Timestamps</h4>
+        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+          <input type="text" id="qc-start" class="url-input" placeholder="Start (e.g. 10.5 or 01:23)" style="width: 100%;">
+          <span>to</span>
+          <input type="text" id="qc-end" class="url-input" placeholder="End (e.g. 25.3 or 01:45)" style="width: 100%;">
+        </div>
+        <div class="modal-actions" style="margin-top: 0; justify-content: flex-end;">
+          <button id="qc-cancel-btn" class="btn btn-secondary">Cancel</button>
+          <button id="qc-download-btn" class="btn btn-primary">
+            <span class="btn-icon">⬇</span>
+            <span class="btn-label">Download Clip</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
+  <script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.min.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
