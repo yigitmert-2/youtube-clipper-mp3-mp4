@@ -44,15 +44,15 @@ downloads: dict[str, dict] = {}
 # Helpers
 # ---------------------------------------------------------------------------
 
-YOUTUBE_RE = re.compile(
+VALID_DOMAIN_RE = re.compile(
     r"^(https?://)?(www\.)?"
-    r"(youtube\.com/(watch\?v=|shorts/|embed/|v/)|youtu\.be/)"
-    r"[A-Za-z0-9_\-]{11}"
+    r"(youtube\.com|youtu\.be|twitter\.com|x\.com|tiktok\.com|instagram\.com|reddit\.com|"
+    r"facebook\.com|fb\.watch|twitch\.tv|vimeo\.com|soundcloud\.com|rumble\.com|odysee\.com)/.+"
 )
 
 
-def is_youtube_url(url: str) -> bool:
-    return bool(YOUTUBE_RE.match(url))
+def is_valid_url(url: str) -> bool:
+    return bool(VALID_DOMAIN_RE.match(url))
 
 
 def cleanup_old_temp(max_age_hours: int = 24) -> None:
@@ -178,8 +178,8 @@ def api_download():
 
     url = data["url"].strip()
     mode = data.get("mode", "audio")
-    if not is_youtube_url(url):
-        return jsonify({"error": "Invalid YouTube URL"}), 400
+    if not is_valid_url(url):
+        return jsonify({"error": "Invalid or unsupported URL"}), 400
 
     session_id = str(uuid.uuid4())
     downloads[session_id] = {
